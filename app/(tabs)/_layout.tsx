@@ -23,11 +23,12 @@ export default function RootLayout() {
                 },
                 default: {},
             }),
-            headerStyle: { backgroundColor: theme.headerBackground }, headerTintColor: theme.text,
+            headerStyle: { backgroundColor: '#f4511e' }, headerTintColor: "white",
         }}
     >
+        {/* <Tabs.Screen name="index" options={{ tabBarIcon: () => null }} /> */}
         <Tabs.Screen name="settings" options={{ tabBarIcon: () => null }} />
         <Tabs.Screen name="(camera)" options={{ title: "In.view", tabBarIcon: () => null }} />
-        <Tabs.Screen name="(files)" options={{ title: "Files", tabBarIcon: () => null }} />
+        <Tabs.Screen name="(media)" options={{ title: "Media", tabBarIcon: () => null }} />
     </Tabs >);
 }

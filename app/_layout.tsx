@@ -31,7 +31,8 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerStyle: { backgroundColor: theme.headerBackground }, headerTintColor: theme.text, headerShadowVisible: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" options={{ headerShown: true }} />
+      <Stack.Screen name="+not-found" options={{ title: "Nothing to see here", headerShown: true }} />
+      {/* <Redirect href={"/(tabs)/(camera)"} /> */}
     </Stack>
   );
 }
