@@ -71,6 +71,7 @@ export default function ExposureControls({
           </Animated.View>
         );
       })}
+      
       <TouchableOpacity
         onPress={() => setShowExposureControls(false)}
         style={{

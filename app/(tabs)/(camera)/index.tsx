@@ -6,13 +6,12 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Redirect, useRouter } from "expo-router";
 import React from "react";
-import { Linking, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableHighlight, View } from "react-native";
+import { Dimensions, Linking, Platform, StatusBar, StyleSheet, TouchableHighlight, View } from "react-native";
 import { Camera, useCameraDevice, useCameraDevices, useCameraPermission } from "react-native-vision-camera";
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     },
     stepContainer: {
         gap: 8,
@@ -42,38 +41,57 @@ export default function () {
     const [exposure, setExposure] = React.useState(0);
     const [flash, setFlash] = React.useState<"off" | "on">("off");
     const [torch, setTorch] = React.useState<"off" | "on">("off");
+    const [CAMERA_ICON, setCameraIcon] = React.useState<"stop-circle" | "dot-circle">("dot-circle")
+    const [IS_RECORDING, setRecordingState] = React.useState<boolean>(false)
     const redirectToPermissions =
         !hasPermission || microphonePermission === "not-determined";
 
     const router = useRouter();
 
-    const takePicture = async () => {
+    const recordVideo = async () => {
         try {
             if (camera.current == null) throw new Error("Camera ref is null!");
-
+            setCameraIcon("stop-circle")
             console.log("Taking photo...");
-            const photo = await camera.current.takePhoto({
-                flash: flash,
-                enableShutterSound: false,
-            });
-            router.push({
-                pathname: "/(tabs)/(media)",
-                params: { media: photo.path, type: "photo" },
-            });
+            if (!IS_RECORDING) {
+                setRecordingState(true)
+                const photo = await camera.current.startRecording({
+                    // flash: flash,
+                    // enableShutterSound: 
+                    onRecordingError: (err) => {
+                        console.error(err);
+                        setRecordingState(true)
+                    },
+                    onRecordingFinished: (video) => {
+                        console.log(video);
+                        setRecordingState(false)
+
+                        setCameraIcon("dot-circle")
+                        router.push({
+                            pathname: "/(tabs)/(media)",
+                            params: { type: "video" },
+                        });
+                    },
+                });
+            } else {
+                setRecordingState(false);
+                // setCameraIcon("dot-circle")
+                camera.current.stopRecording();
+            }
             // onMediaCaptured(photo, 'photo')
         } catch (e) {
             console.error("Failed to take photo!", e);
         }
     };
+    const screenHeight = Dimensions.get('window').height;
 
     if (redirectToPermissions) return <Redirect href={"/permissions"} />;
     if (!device) return <></>;
-
     return (
         <>
             <StatusBar barStyle={"light-content"} />
-            <SafeAreaView style={styles.container}>
-                <View style={{ flex: 2, borderRadius: 10, overflow: "hidden" }}>
+            <View style={styles.container}>
+                <View style={{ flex: 1, overflow: "hidden", borderColor: "green", borderWidth: 3 }}>
                     <Camera
                         ref={camera}
                         style={{ flex: 1 }}
@@ -85,9 +103,11 @@ export default function () {
                         preview={true}
                         exposure={exposure}
                         torch={torch}
+                        video={true}
+                        audio={true}
                     // fps={60}
                     />
-                    <BlurView
+                    {/* <BlurView
                         intensity={100}
                         tint="dark"
                         style={{
@@ -102,11 +122,12 @@ export default function () {
                         <Text
                             style={{
                                 color: "white",
+                                top: 0
                             }}
                         >
                             Exposure: {exposure} | Zoom: x{zoom}
                         </Text>
-                    </BlurView>
+                    </BlurView> */}
                 </View>
 
                 {/* <ZoomControls
@@ -128,94 +149,108 @@ export default function () {
                         exposure={exposure}
                     />
                 ) : (
-                    <View style={{ flex: 1, padding: 10 }}>
+                    <View style={{ flex: 1, position: "absolute", zIndex: 10, bottom: 0, width: "100%" }}>
                         {/* Top section */}
                         <View
                             style={{
                                 flex: 0.7,
+                                padding: 10
+
                             }}
                         >
-                            <ThemedText>Max FPS: {device.formats[0].maxFps}</ThemedText>
-                            <ThemedText>
+                            <ThemedText style={{ color: "white" }}>Max FPS: {device.formats[0].maxFps}</ThemedText>
+                            <ThemedText style={{ color: "white" }}>
                                 Width: {device.formats[0].photoWidth} Height:{" "}
                                 {device.formats[0].photoHeight}
                             </ThemedText>
-                            <ThemedText>Camera: {device.name}</ThemedText>
+                            <ThemedText style={{ color: "white" }}>Camera: {device.name}</ThemedText>
                         </View>
 
                         {/* Middle section */}
-                        <View
+                        <BlurView
+                            intensity={100}
+                            tint="dark"
                             style={{
-                                flex: 0.7,
-                                flexDirection: "row",
-                                justifyContent: "space-evenly",
+                                flex: 1,
+                                paddingBlock: 15,
+                                rowGap: 10
                             }}
+                            experimentalBlurMethod="dimezisBlurView"
                         >
-                            <ObscuraButton
-                                iconName={torch === "on" ? "flashlight" : "flashlight-outline"}
-                                onPress={() => setTorch((t) => (t === "off" ? "on" : "off"))}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                            <ObscuraButton
-                                iconName={
-                                    flash === "on" ? "flash-outline" : "flash-off-outline"
-                                }
-                                onPress={() => setFlash((f) => (f === "off" ? "on" : "off"))}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                            <ObscuraButton
-                                iconName="camera-reverse-outline"
-                                onPress={() =>
-                                    setCameraPosition((p) => (p === "back" ? "front" : "back"))
-                                }
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                            <ObscuraButton
-                                iconName="image-outline"
-                                onPress={() => {
-                                    const link = Platform.select({
-                                        ios: "photos-redirect://",
-                                        android: "content://media/external/images/media",
-                                    });
-                                    Linking.openURL(link!);
+                            <View
+                                style={{
+                                    flex: 1,
+                                    flexDirection: "row",
+                                    justifyContent: "space-evenly",
                                 }}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                            <ObscuraButton
-                                iconName="settings-outline"
-                                onPress={() => router.push("/_sitemap")}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                        </View>
+                            >
+                                <ObscuraButton
+                                    iconName={torch === "on" ? "flashlight" : "flashlight-outline"}
+                                    onPress={() => setTorch((t) => (t === "off" ? "on" : "off"))}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                                <ObscuraButton
+                                    iconName={
+                                        flash === "on" ? "flash-outline" : "flash-off-outline"
+                                    }
+                                    onPress={() => setFlash((f) => (f === "off" ? "on" : "off"))}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                                <ObscuraButton
+                                    iconName="camera-reverse-outline"
+                                    onPress={() =>
+                                        setCameraPosition((p) => (p === "back" ? "front" : "back"))
+                                    }
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                                <ObscuraButton
+                                    iconName="image-outline"
+                                    onPress={() => {
+                                        const link = Platform.select({
+                                            ios: "photos-redirect://",
+                                            android: "content://media/external/images/media",
+                                        });
+                                        Linking.openURL(link!);
+                                    }}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                                <ObscuraButton
+                                    iconName="settings-outline"
+                                    onPress={() => router.push("/_sitemap")}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                            </View>
 
-                        {/* Botton section */}
-                        <View
-                            style={{
-                                flex: 1.1,
-                                flexDirection: "row",
-                                justifyContent: "space-evenly",
-                                alignItems: "center",
-                            }}
-                        >
-                            <ObscuraButton
-                                iconSize={40}
-                                title="+/-"
-                                onPress={() => setShowZoomControls((s) => !s)}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                            <TouchableHighlight onPress={takePicture}>
-                                <FontAwesome5 name="dot-circle" size={55} color={"black"} />
-                            </TouchableHighlight>
-                            <ObscuraButton
-                                iconSize={40}
-                                title="1x"
-                                onPress={() => setShowExposureControls((s) => !s)}
-                                containerStyle={{ alignSelf: "center" }}
-                            />
-                        </View>
+                            {/* Botton section */}
+                            <View
+                                style={{
+                                    flex: 1.1,
+                                    flexDirection: "row",
+                                    justifyContent: "space-evenly",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <ObscuraButton
+                                    iconSize={40}
+                                    title="+/-"
+                                    onPress={() => setShowZoomControls((s) => !s)}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+
+                                <TouchableHighlight onPress={recordVideo}>
+                                    <FontAwesome5 name={CAMERA_ICON} size={55} color={"white"} />
+                                </TouchableHighlight>
+                                <ObscuraButton
+                                    iconSize={40}
+                                    title="1x"
+                                    onPress={() => setShowExposureControls((s) => !s)}
+                                    containerStyle={{ alignSelf: "center" }}
+                                />
+                            </View>
+                        </BlurView>
                     </View>
                 )}
-            </SafeAreaView>
+            </View>
         </>
     )
 

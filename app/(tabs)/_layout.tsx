@@ -1,6 +1,6 @@
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Appearance, Platform } from "react-native";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 
@@ -28,7 +28,9 @@ export default function RootLayout() {
     >
         {/* <Tabs.Screen name="index" options={{ tabBarIcon: () => null }} /> */}
         <Tabs.Screen name="settings" options={{ tabBarIcon: () => null }} />
-        <Tabs.Screen name="(camera)" options={{ title: "In.view", tabBarIcon: () => null }} />
+        <Tabs.Screen name="(camera)" options={{ title: "In.view", tabBarIcon: () => null, headerShown: false }} />
         <Tabs.Screen name="(media)" options={{ title: "Media", tabBarIcon: () => null }} />
-    </Tabs >);
+        <Redirect href={"/(tabs)/(camera)"} />
+    </Tabs >
+    );
 }

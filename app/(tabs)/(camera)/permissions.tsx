@@ -2,7 +2,7 @@ import { Alert, StyleSheet, Switch, View } from 'react-native';
 import React from 'react';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Camera, CameraPermissionStatus } from 'react-native-vision-camera';
 import * as ExpoMediaLibrary from "expo-media-library";
@@ -78,7 +78,7 @@ export function permissions() {
 
     return (
         <>
-            {/* <Stack.Screen options={{ headerTitle: "Permissions" }} /> */}
+            <Stack.Screen options={{ headerTitle: "Permissions" }} />
             <ThemedView style={styles.container}>
                 <ThemedText style={styles.subtitle}>
                     Where dem prems bruv?
