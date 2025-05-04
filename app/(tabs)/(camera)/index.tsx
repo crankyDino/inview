@@ -2,11 +2,13 @@ import ExposureControls from "@/components/ExposureControls";
 import ObscuraButton from "@/components/ObscuraButton";
 import { ThemedText } from "@/components/ThemedText";
 import ZoomControls from "@/components/ZoomControls";
+import { useStorage } from "@/hooks/useStorage";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Redirect, useRouter } from "expo-router";
 import React from "react";
 import { Dimensions, Linking, Platform, StatusBar, StyleSheet, TouchableHighlight, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, useCameraDevice, useCameraDevices, useCameraPermission } from "react-native-vision-camera";
 
 const styles = StyleSheet.create({
@@ -26,6 +28,7 @@ const styles = StyleSheet.create({
     },
 });
 export default function () {
+    const { setData } = useStorage();
     const { hasPermission } = useCameraPermission();
     const microphonePermission = Camera.getMicrophonePermissionStatus();
     const [showZoomControls, setShowZoomControls] = React.useState(false);
@@ -52,7 +55,6 @@ export default function () {
         try {
             if (camera.current == null) throw new Error("Camera ref is null!");
             setCameraIcon("stop-circle")
-            console.log("Taking photo...");
             if (!IS_RECORDING) {
                 setRecordingState(true)
                 const photo = await camera.current.startRecording({
@@ -63,14 +65,15 @@ export default function () {
                         setRecordingState(true)
                     },
                     onRecordingFinished: (video) => {
-                        console.log(video);
+
+                        setData(video.path)
                         setRecordingState(false)
 
                         setCameraIcon("dot-circle")
-                        router.push({
-                            pathname: "/(tabs)/(media)",
-                            params: { type: "video" },
-                        });
+                        // router.push({
+                        //     pathname: "/(tabs)/(media)",
+                        //     params: { media: video.path, type: "video" },
+                        // });
                     },
                 });
             } else {
@@ -90,8 +93,8 @@ export default function () {
     return (
         <>
             <StatusBar barStyle={"light-content"} />
-            <View style={styles.container}>
-                <View style={{ flex: 1, overflow: "hidden", borderColor: "green", borderWidth: 3 }}>
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, overflow: "hidden", }}>
                     <Camera
                         ref={camera}
                         style={{ flex: 1 }}
@@ -250,7 +253,7 @@ export default function () {
                         </BlurView>
                     </View>
                 )}
-            </View>
+            </SafeAreaView>
         </>
     )
 

@@ -1,80 +1,107 @@
 import {
     Appearance, Platform, StyleSheet, ScrollView,
-    SafeAreaView, Image,
+    SafeAreaView, Image, FlatList,
+    View,
+    Text,
     Alert
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { saveToLibraryAsync } from 'expo-media-library';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
+import { useStorage } from '@/hooks/useStorage';
+import { ThemedView } from '@/components/ThemedView';
 import ObscuraButton from '@/components/ObscuraButton';
-
+import { saveToLibraryAsync } from 'expo-media-library';
 
 export function content() {
     // const styles = StyleSheet.create();
-
     const colourScheme = Appearance.getColorScheme();
     const theme = colourScheme === 'dark' ? Colors.dark : Colors.light;
     const styles = createStyle(theme, colourScheme);
     const Container = Platform.OS === 'web' ? ScrollView : SafeAreaView;
 
+    const { videos, reset } = useStorage()
     const { media, type } = useLocalSearchParams();
     const router = useRouter();
 
-    console.log(media, type);
-    return (
-        // <Container style={styles.contentContainer}>
-        //     <FlatList
-        //         data={MENU_ITEMS}
-        //         showsVerticalScrollIndicator={false}
-        //         keyExtractor={(item) => item.id.toString()}
-        //         ListEmptyComponent={<Text >DER IZ NOTING!</Text>}
-        //         renderItem={({ item, index }) => (
-        //             <View style={styles.row} >
-        //                 <View style={styles.menuTextRow}>
-        //                     <Text style={[styles.menuItemTitle, styles.menuItemText]} >{item.title}</Text>
-        //                     <Text style={styles.menuItemText} >{item.description}</Text>
-        //                 </View>
-        //                 <Image
-        //                     source={actionFigure}
-        //                     style={styles.menuImage}
-        //                 />
-        //             </View>
-        //         )}
-        //     >
+    // let videos: TVideo[] = []
+    // let { fetchData } = useStorage()
+    // useEffect(() => {
+    //     // fetchData()
+    //     storage.getAllKeys().forEach((el, i) => {
+    //         // const [val] = useMMKVObject(el, storage)
+    //         videos ? videos.push(JSON.parse(storage.getString(el) ?? "")) : null
+    //         console.log(videos);
+    //     });
+    // }, [videos])
 
-        //     </FlatList>
-        // </Container >
-        // );
+    // if (storage.getAllKeys()[0]) {
+    //     const [val] = useMMKVObject(storage.getAllKeys()[0], storage)
+    //     console.log(val);
+    // }
+    return (
 
         <ThemedView style={styles.container}>
-            {
-                type === "photo" ? (
-                    <Image
-                        source={{ uri: `file://${media}` }}
-                        style={{ width: "100%", height: "80%", resizeMode: "contain" }}
-                    />
-                ) : null
-                // <Video source={{ uri: media }} style={{ width: "100%", height: "100%" }} />
-            }
+            <Container style={styles.contentContainer}>
+                <FlatList
+                    data={videos}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item) => item?.id.toString()}
+                    ListEmptyComponent={<Text >DER IZ NOTING! </Text>}
+                    renderItem={({ item, index }) => (
+                        <View style={styles.row} >
+                            <View style={styles.menuTextRow}>
+                                <Text style={[styles.menuItemTitle, styles.menuItemText]} >Date:</Text>
+                                <Text style={styles.menuItemText} >{item.date}</Text>
+                                <ObscuraButton
+                                    title="Save to gallery"
+                                    containerStyle={{ alignSelf: "flex-start", marginTop: 3 }}
+                                    onPress={async () => {
+                                        saveToLibraryAsync(item.path);
+                                        Alert.alert("Saved to gallery!");
+                                    }}
+                                />
+                            </View>
+                            <Image
+                                source={{ uri: `file://${item.path}` }}
+                                style={styles?.menuImage}
+                            />
+                        </View>
+                    )}
+                >
+
+                </FlatList>
+            </Container >
+
             <ObscuraButton
 
-                title="Save to gallery"
+                title="clear"
                 containerStyle={{ alignSelf: "center" }}
-                onPress={async () => {
-                    saveToLibraryAsync(media as string);
-                    Alert.alert("Saved to gallery!");
-                    router.back();
-                }}
+                onPress={() => reset()}
             />
-            <Link href="/(tabs)/(camera)" style={styles.link}>
-                <ThemedText type="link">Delete and go back</ThemedText>
-            </Link>
         </ThemedView>
-    )
+    );
+    //     {
+    //         <Image
+    //             source={{ uri: `file://${media}` }}
+    //             style={{ width: "100%", height: "80%", resizeMode: "contain" }}
+    //         />
+    //         // <Video source={{ uri: media }} style={{ width: "100%", height: "100%" }} />
+    //     }
+    //     <ObscuraButton
+
+    //         title="Save to gallery"
+    //         containerStyle={{ alignSelf: "center" }}
+    //         onPress={async () => {
+    //             saveToLibraryAsync(media as string);
+    //             Alert.alert("Saved to gallery!");
+    //             router.back();
+    //         }}
+    //     />
+    //     <Link href="/(tabs)/(camera)" style={styles.link}>
+    //         <ThemedText type="link">Delete and go back</ThemedText>
+    //     </Link>
 }
 
 export default content
